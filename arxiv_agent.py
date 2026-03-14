@@ -2,6 +2,7 @@ import logging
 import feedparser
 from datetime import datetime, timedelta, timezone
 from typing import List
+from urllib.parse import quote
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 from llm import get_llm
@@ -24,7 +25,7 @@ def run_arxiv_agent(target: int = 25) -> list:
         max_results is capped at 30. Returns paper IDs, titles and abstracts."""
         url = (
             f"http://export.arxiv.org/api/query"
-            f"?search_query={query}"
+            f"?search_query={quote(query)}"
             f"&max_results={min(max_results, 30)}"
             f"&sortBy=submittedDate&sortOrder=descending"
         )
