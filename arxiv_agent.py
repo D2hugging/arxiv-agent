@@ -11,7 +11,7 @@ from persistence import load_seen_urls
 llm = get_llm()
 
 
-def run_arxiv_agent(target: int = 25) -> list:
+def run_arxiv_agent(target: int = 10) -> list:
     seen_urls = load_seen_urls()
     paper_registry = {}   # arxiv_id -> {title, url, abstract}
     result = {"papers": []}
@@ -84,7 +84,7 @@ def run_arxiv_agent(target: int = 25) -> list:
         explanations: 2-3 sentence plain-English explanation for each paper
                       (same order as arxiv_ids), explaining what it contributes
                       and why it matters for someone learning LLM inference.
-        Call this when you have selected 20-30 papers."""
+        Call this when you have selected 10 papers."""
         papers = []
         for arxiv_id, explanation in zip(arxiv_ids, explanations):
             if arxiv_id in paper_registry:
@@ -124,8 +124,8 @@ def run_arxiv_agent(target: int = 25) -> list:
         "- As a tiebreaker between equally strong papers, prefer those from well-known labs "
         "  (Google, Meta, Microsoft, NVIDIA, Anthropic, OpenAI, CMU, Stanford, MIT, "
         "  UC Berkeley, Tsinghua, PKU).\n"
-        "- Ensure balanced coverage: at least 5 papers per topic.\n"
-        "- When you have 20-30 high-quality papers, call finalize.\n"
+        "- Ensure balanced coverage across all 4 topics.\n"
+        "- When you have 10 high-quality papers, call finalize.\n"
         "- Each explanation must be 2-3 sentences: what the paper does and why it matters."
     )
 
