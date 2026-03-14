@@ -16,21 +16,26 @@ logging.basicConfig(
 app = FastAPI(title="arXiv Agent")
 
 
-def send_to_discord(markdown: str):
+def send_to_discord(markdown: str) -> bool:
     webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
     if not webhook_url:
         logging.warning("DISCORD_WEBHOOK_URL not set, skipping.")
-        return
-    parts = markdown.split("\n")
-    header = parts[0]
-    message_chunk = header + "\n"
-    for line in parts[1:]:
-        if len(message_chunk) + len(line) + 1 > 2000:
+        return False
+    try:
+        parts = markdown.split("\n")
+        header = parts[0]
+        message_chunk = header + "\n"
+        for line in parts[1:]:
+            if len(message_chunk) + len(line) + 1 > 2000:
+                requests.post(webhook_url, json={"content": message_chunk})
+                message_chunk = ""
+            message_chunk += line + "\n"
+        if message_chunk:
             requests.post(webhook_url, json={"content": message_chunk})
-            message_chunk = ""
-        message_chunk += line + "\n"
-    if message_chunk:
-        requests.post(webhook_url, json={"content": message_chunk})
+        return True
+    except Exception as e:
+        logging.error(f"[discord] failed to send: {e}")
+        return False
 
 
 @app.get("/")
@@ -56,9 +61,12 @@ async def fetch_arxiv_endpoint(request: Request, background_tasks: BackgroundTas
             return
         markdown = format_arxiv_markdown(papers)
         logging.info(f"Formatted {len(papers)} papers.")
-        send_to_discord(markdown)
-        save_seen_urls({paper["url"] for paper in papers})
-        logging.info("Done.")
+        sent = send_to_discord(markdown)
+        if sent:
+            save_seen_urls({paper["url"] for paper in papers})
+            logging.info("Done.")
+        else:
+            logging.warning("Discord send failed, URLs not saved.")
 
     background_tasks.add_task(run_once)
     return JSONResponse({"status": "accepted", "message": "arXiv agent running in background."})
