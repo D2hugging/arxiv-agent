@@ -1,0 +1,14 @@
+name: Keep Space Alive
+
+on:
+  schedule:
+    - cron: '0 12 * * *'  # daily at 12:00 UTC
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Space
+        run: |
+          curl -s https://0xd2d-arxiv-agent.hf.space/api/ping

@@ -1,0 +1,17 @@
+name: Weekly arXiv Fetch
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # every Monday at 09:00 UTC
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger arXiv fetch
+        run: |
+          curl -X POST https://0xd2d-arxiv-agent.hf.space/v1/arxiv/fetch \
+            -H "Authorization: Bearer ${{ secrets.HF_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json"

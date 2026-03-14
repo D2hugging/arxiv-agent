@@ -1,0 +1,12 @@
+# uv
+.venv/
+.uv/
+uv.lock
+pyproject.toml
+.python-version
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+.env

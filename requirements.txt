@@ -1,0 +1,9 @@
+langgraph
+langchain
+langchain-google-genai
+langchain-openai
+requests
+fastapi
+uvicorn
+feedparser
+huggingface_hub
