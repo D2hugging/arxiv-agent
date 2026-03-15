@@ -1,11 +1,12 @@
 import os
+import time
 import logging
 import requests
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 from arxiv_agent import run_arxiv_agent
 from formatter import format_arxiv_markdown
-from persistence import save_seen_urls
+from persistence import save_seen_urls, save_selected_papers
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s",
@@ -16,26 +17,35 @@ logging.basicConfig(
 app = FastAPI(title="arXiv Agent")
 
 
-def send_to_discord(markdown: str) -> bool:
+def send_to_discord(markdown: str, retries: int = 3) -> bool:
     webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
     if not webhook_url:
         logging.warning("DISCORD_WEBHOOK_URL not set, skipping.")
         return False
-    try:
-        parts = markdown.split("\n")
-        header = parts[0]
-        message_chunk = header + "\n"
-        for line in parts[1:]:
-            if len(message_chunk) + len(line) + 1 > 2000:
-                requests.post(webhook_url, json={"content": message_chunk})
-                message_chunk = ""
-            message_chunk += line + "\n"
-        if message_chunk:
-            requests.post(webhook_url, json={"content": message_chunk})
-        return True
-    except Exception as e:
-        logging.error(f"[discord] failed to send: {e}")
-        return False
+    parts = markdown.split("\n")
+    header = parts[0]
+    chunks = []
+    message_chunk = header + "\n"
+    for line in parts[1:]:
+        if len(message_chunk) + len(line) + 1 > 2000:
+            chunks.append(message_chunk)
+            message_chunk = header + "\n"
+        message_chunk += line + "\n"
+    if message_chunk:
+        chunks.append(message_chunk)
+
+    for attempt in range(retries):
+        try:
+            for chunk in chunks:
+                requests.post(webhook_url, json={"content": chunk}).raise_for_status()
+            return True
+        except Exception as e:
+            logging.warning(f"[discord] attempt {attempt + 1}/{retries} failed: {e}")
+            if attempt < retries - 1:
+                time.sleep(2 ** attempt)
+
+    logging.error("[discord] all retry attempts failed.")
+    return False
 
 
 @app.get("/")
@@ -61,12 +71,13 @@ async def fetch_arxiv_endpoint(request: Request, background_tasks: BackgroundTas
             return
         markdown = format_arxiv_markdown(papers)
         logging.info(f"Formatted {len(papers)} papers.")
+        save_selected_papers(papers)
         sent = send_to_discord(markdown)
         if sent:
             save_seen_urls({paper["url"] for paper in papers})
             logging.info("Done.")
         else:
-            logging.warning("Discord send failed, URLs not saved.")
+            logging.warning("Discord send failed after retries. Papers saved to selected log but URLs not marked as seen.")
 
     background_tasks.add_task(run_once)
     return JSONResponse({"status": "accepted", "message": "arXiv agent running in background."})

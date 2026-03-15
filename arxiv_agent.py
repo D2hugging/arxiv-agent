@@ -132,5 +132,7 @@ def run_arxiv_agent(target: int = 10) -> list:
     logging.info("[arxiv_agent] starting research agent...")
     agent.invoke({"messages": [{"role": "user", "content": prompt}]})
     logging.info(f"[arxiv_agent] agent finished, selected {len(result['papers'])} papers")
+    for i, p in enumerate(result["papers"], 1):
+        logging.info(f"[arxiv_agent] {i}. {p['title']} — {p['url']}")
 
     return result["papers"]
