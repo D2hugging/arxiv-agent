@@ -11,7 +11,6 @@ jobs:
     steps:
       - name: Trigger arXiv fetch
         run: |
-          curl -X POST https://0xd2d-llm-paper-radar.hf.space/v1/arxiv/fetch \
+          curl -s -f -X POST https://0xd2d-arxiv-agent.hf.space/v1/arxiv/fetch \
             -H "Authorization: Bearer ${{ secrets.HF_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -H "Accept: application/json"
+            -H "Content-Type: application/json"
