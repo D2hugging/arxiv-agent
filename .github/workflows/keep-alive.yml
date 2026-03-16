@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Ping Space
         run: |
-          curl -s https://0xd2d-arxiv-agent.hf.space/api/ping
+          curl -s https://0xd2d-llm-paper-radar.hf.space/api/ping
